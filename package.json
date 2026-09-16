@@ -1,0 +1,20 @@
+{
+  "name": "@dsh-external/dsh-stm32",
+  "version": "0.0.1",
+  "description": "STM32CubeMX 无头配置与工程生成工具包：环境自检、.ioc 结构化读写（含 IPParameters 同步与编号重排）、无头生成",
+  "private": true,
+  "type": "module",
+  "main": "./lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "license": "BSD-3-Clause",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.0.1-rc <2",
+    "cordis": ">=4.0.0-rc <5"
+  },
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "check": "node --check lib/ioc.js && node --check lib/index.js"
+  }
+}

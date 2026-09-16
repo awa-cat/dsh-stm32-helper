@@ -1,0 +1,22 @@
+# 依赖 junction（构建时创建，指向本机 npm 安装的 dsh-tools）
+node_modules/
+
+# 打包产物
+*.tgz
+*.tsbuildinfo
+
+# 插件运行时产生的状态：快照、备份、生成脚本
+.dsh-stm32/
+
+# 嵌入生态工具（embed-ai-tool 适配层）在本机留下的 profile 缓存
+.em_skill.json
+
+# 生成工程的构建输出
+build/
+Debug/
+Release/
+Objects/
+Listings/
+
+# 注意：lib/ 是**源码**不是构建产物（本插件为纯 ESM JavaScript，不经 tsc），
+# 因此绝对不能忽略。
