@@ -40,8 +40,15 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 `stm32_generate` 未给 `outputDir` 时默认生成到 **`D:\STM32_Workspace\DSHCode`**，
 可用环境变量 `DSH_STM32_CODE_ROOT` 覆盖。这样所有 agent 产出的工程集中一处，不污染用户的既有工程。
 
-⚠️ 该目录位于 DSH 文件沙箱可写范围**之外**：插件（非受限）能写入，但 agent 的 shell/文件工具不能。
-要让 agent 能编辑代码与编译，需把**会话工作区设为 `D:\STM32_Workspace`**；否则生成会成功但后续编辑/编译被拒。
+⚠️ 该目录位于 DSH 文件沙箱可写范围**之外**：agent 的 shell/文件工具不能直接写。因此插件提供两条受限通道：
+
+| 步骤 | 工具 | 说明 |
+|---|---|---|
+| 生成工程 | `stm32_generate` | 插件进程写入 |
+| 写业务代码 | `stm32_user_code` | **只写 `USER CODE BEGIN/END` 之间**，区外不动，写前备份、写后校验 |
+| 编译 / 烧录 | — | 由用户手动执行 |
+
+因此**不需要**把会话工作区改为 `D:\STM32_Workspace`。
 
 ## 环境前提
 
@@ -64,6 +71,7 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 | `stm32_ioc_read` | `.ioc` → 结构化 JSON，并检查编号连续性、参数登记表一致性 | ✅ |
 | `stm32_ioc_set` | 语义化改 `.ioc`（uart / gpio），自动同步登记表 + 编号重排，改前备份改后回读 | |
 | `stm32_generate` | CubeMX `-q` 脚本模式无头生成，校验产物 | ⚠️ 沙箱外 |
+| `stm32_user_code` | 把业务代码写进 USER CODE 保留区（结构性只能写区内） | ⚠️ 沙箱外、结构受限 |
 | `stm32_guard` | 生成物快照 + 越界改动检出（快照/比对/查基线/清快照） | |
 | `stm32_flash` | 烧录 STM32（`auto` 有探针就烧 / `manual` 只给命令） | |
 | `stm32_serial` | 读取串口输出并按正则断言，用于上板验收 | |
