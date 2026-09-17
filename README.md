@@ -35,6 +35,14 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 | `docs/RELATED.md` | 与 `embed-ai-tool` 等第三方项目的分工与**按上游安装**的方法 |
 | `selftest*.mjs` | 自测：`.ioc` 解析/改写/登记表同步；guard 的 5 类判定 |
 
+## 默认工程代码根
+
+`stm32_generate` 未给 `outputDir` 时默认生成到 **`D:\STM32_Workspace\DSHCode`**，
+可用环境变量 `DSH_STM32_CODE_ROOT` 覆盖。这样所有 agent 产出的工程集中一处，不污染用户的既有工程。
+
+⚠️ 该目录位于 DSH 文件沙箱可写范围**之外**：插件（非受限）能写入，但 agent 的 shell/文件工具不能。
+要让 agent 能编辑代码与编译，需把**会话工作区设为 `D:\STM32_Workspace`**；否则生成会成功但后续编辑/编译被拒。
+
 ## 环境前提
 
 本插件针对 Windows + STM32CubeMX 开发，实测环境：
