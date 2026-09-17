@@ -37,6 +37,13 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 | `docs/RELATED.md` | 与 `embed-ai-tool` 等第三方项目的分工与**按上游安装**的方法 |
 | `selftest*.mjs` | 自测：`.ioc` 解析/改写/登记表同步；guard 的 5 类判定 |
 
+## 总开关（默认关闭）
+
+8 个工具受一个总开关控制，**默认关闭**；关闭时它们会从模型的工具表里被移除（模型看不到、不会调用）。
+
+浏览器打开 **http://127.0.0.1:13080/stm32/** 点一下即切换（与 DSH Web 同端口、同源）。
+状态存 `%USERPROFILE%\.dsh\dsh-stm32.json`。
+
 ## 默认工程代码根
 
 `stm32_generate` 未给 `outputDir` 时默认生成到 **`D:\STM32_Workspace\DSHCode`**，

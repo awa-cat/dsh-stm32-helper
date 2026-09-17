@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>STM32 助手 — 开关</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 32px 20px;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--theme-bg, #1a1a1e); color: var(--theme-text, #e8e8ea);
+    display: flex; justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 620px; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  .sub { color: #9a9aa2; font-size: 13px; margin: 0 0 22px; line-height: 1.7; }
+  .card {
+    border: 1px solid var(--theme-border, #33333a); border-radius: 14px;
+    padding: 20px; background: var(--theme-input-bg, #212127);
+  }
+  .row { display: flex; align-items: center; gap: 16px; }
+  .state { flex: 1; }
+  .state .big { font-size: 17px; font-weight: 600; }
+  .state .hint { color: #9a9aa2; font-size: 12px; margin-top: 5px; line-height: 1.6; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+  .on  { background: #2ecc71; box-shadow: 0 0 9px #2ecc7188; }
+  .off { background: #f1c40f; }
+  button {
+    font: inherit; font-size: 14px; padding: 11px 26px; border-radius: 9px;
+    border: none; cursor: pointer; white-space: nowrap; min-width: 132px;
+    background: #4a9eff; color: #fff; transition: opacity .15s;
+  }
+  button.off { background: transparent; border: 1px solid #d33; color: #ff6b6b; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .msg { margin-top: 16px; font-size: 12px; color: #9a9aa2; min-height: 18px; line-height: 1.6; }
+  .tools { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--theme-border, #33333a); }
+  .tools .t { font-size: 12px; color: #9a9aa2; margin-bottom: 8px; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; color: #b9b9c4; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 11px; font-family: ui-monospace, Consolas, monospace;
+          padding: 3px 8px; border-radius: 7px; border: 1px solid var(--theme-border, #33333a); color: #b9b9c4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>STM32 助手</h1>
+  <p class="sub">
+    开启后，会话里会出现 8 个 STM32 工具（CubeMX 配置 / 生成工程 / 写代码 / 越界检测 / 烧录命令）。<br>
+    关闭时这些工具会从模型的工具表中移除，不会被调用。
+  </p>
+
+  <div class="card">
+    <div class="row">
+      <div class="state">
+        <div class="big"><span id="dot" class="dot off"></span><span id="label">读取中…</span></div>
+        <div class="hint" id="hint"></div>
+      </div>
+      <button id="btn" disabled>…</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="tools">
+    <div class="t">工具清单（开启后可用）</div>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var API = '/stm32/api'
+  var state = { enabled: false, tools: [] }
+  var $ = function (id) { return document.getElementById(id) }
+
+  function render() {
+    var on = state.enabled
+    $('dot').className = 'dot ' + (on ? 'on' : 'off')
+    $('label').textContent = on ? '已开启' : '已关闭（默认）'
+    $('hint').textContent = on
+      ? '新会话（或下一步）即可看到 stm32_* 工具。'
+      : '模型当前看不到任何 stm32_* 工具，也不会调用它们。'
+    var b = $('btn')
+    b.disabled = false
+    b.textContent = on ? '关闭' : '开启'
+    b.className = on ? 'off' : ''
+    $('chips').textContent = ''
+    for (var i = 0; i < state.tools.length; i++) {
+      var c = document.createElement('span')
+      c.className = 'chip'
+      c.textContent = state.tools[i]
+      $('chips').appendChild(c)
+    }
+  }
+
+  function load() {
+    fetch(API + '/state').then(function (r) { return r.json() }).then(function (d) {
+      if (!d || !d.ok) { $('msg').textContent = '读取失败: ' + JSON.stringify(d); return }
+      state = d
+      render()
+    }).catch(function (e) { $('msg').textContent = '读取失败: ' + e })
+  }
+
+  $('btn').addEventListener('click', function () {
+    var b = $('btn')
+    b.disabled = true
+    $('msg').textContent = '正在切换…'
+    fetch(API + '/enable', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ enabled: !state.enabled })
+    }).then(function (r) { return r.json() }).then(function (d) {
+      if (!d || !d.ok) { $('msg').textContent = '切换失败: ' + JSON.stringify(d); b.disabled = false; return }
+      state = d
+      render()
+      $('msg').textContent = '已' + (d.enabled ? '开启' : '关闭') + ' · ' + new Date().toLocaleTimeString() +
+        (d.enabled ? ' — 回到会话即可使用（如未出现请新开会话）' : '')
+    }).catch(function (e) {
+      $('msg').textContent = '切换失败: ' + e
+      b.disabled = false
+    })
+  })
+
+  load()
+})()
+</script>
+</body>
+</html>
