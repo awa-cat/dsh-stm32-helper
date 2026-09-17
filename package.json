@@ -6,7 +6,8 @@
   "type": "module",
   "main": "./lib/index.js",
   "files": [
-    "lib"
+    "lib",
+    "cordis.patch.yml"
   ],
   "dsh": {
     "bundle": {
