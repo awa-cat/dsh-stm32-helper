@@ -1,0 +1,6 @@
+# dsh-stm32 bundle 层：把 STM32CubeMX 工具包插件插入 Web profile 的配置树。
+# 插件本体在 lib/index.js（name / inject:['tools'] / apply），
+# 这里只声明挂载行，与 dsh-whale-widget / dsh-super-injector 同构。
+- insert:
+    - id: dsh-stm32
+      name: '@dsh-external/dsh-stm32'

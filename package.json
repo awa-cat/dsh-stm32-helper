@@ -8,6 +8,11 @@
   "files": [
     "lib"
   ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "license": "BSD-3-Clause",
   "peerDependencies": {
     "@deepseek-ai/dsh-tools": ">=0.0.1-rc <2",
