@@ -5,6 +5,8 @@ STM32CubeMX **无头配置与工程生成** 工具包（DSH 插件，toolkit 形
 生态里 `embed-ai-tool` 等技能集覆盖的是**已有工程**的 build / flash / debug / serial；
 本插件补的是它们**完全没有**的那一层：**外设配置 → 无头生成 → 配置真的落进代码**。
 
+> 📖 **使用说明见 [docs/USAGE.md](docs/USAGE.md)** —— 功能清单、8 个工具的参数、典型场景、故障排查。
+
 ## 安装
 
 ```powershell
