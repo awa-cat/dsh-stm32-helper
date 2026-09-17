@@ -44,7 +44,12 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 1. 从模型的工具表里移除（实测工具总数 54 → 46）；
 2. 执行时兜底拒绝（绕过调用会拿到 `{ ok:false, disabled:true }`）。
 
-浏览器打开 **http://127.0.0.1:13080/stm32/** 点一下即切换（与 DSH Web 同端口、同源）。
+三种切换方式（任选）：
+
+1. **在 DSH 输入框里打 `/`，找到 `stm32`**：`/stm32 on` / `/stm32 off` / `/stm32 status`（推荐，直接在界面里）
+2. 开关页：<http://127.0.0.1:13080/stm32/>（与 DSH Web 同端口、同源，一个按钮）
+3. 对 agent 说「打开 STM32 开关」
+
 状态存 `%USERPROFILE%\.dsh\dsh-stm32.json`。
 
 ## 默认工程代码根
