@@ -1,13 +1,14 @@
 {
   "name": "@dsh-external/dsh-stm32",
-  "version": "0.0.1",
-  "description": "STM32CubeMX 无头配置与工程生成工具包：环境自检、.ioc 结构化读写（含 IPParameters 同步与编号重排）、无头生成",
+  "version": "0.0.2",
+  "description": "STM32CubeMX 无头配置与工程生成工具包：环境自检、.ioc 结构化读写（含 IPParameters 同步与编号重排）、无头生成、App/ 自建模块登记（Keil/Makefile/CMake），跨 Windows/macOS/Linux",
   "private": true,
   "type": "module",
   "main": "./lib/index.js",
   "files": [
     "lib",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "skills"
   ],
   "dsh": {
     "bundle": {
@@ -21,6 +22,7 @@
   },
   "scripts": {
     "build": "bash scripts/build.sh",
-    "check": "node --check lib/ioc.js && node --check lib/index.js"
+    "check": "node --check lib/index.js && node --check lib/platform.js && node --check lib/ioc.js && node --check lib/appfile.js && node --check lib/usercode.js && node --check lib/guard.js && node --check lib/flash.js && node --check lib/serial.js",
+    "selftest": "node selftest-platform.mjs"
   }
 }

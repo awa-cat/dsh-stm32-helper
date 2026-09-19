@@ -104,10 +104,16 @@ cd ~/.dsh/profiles/web && pnpm install     # Windows 同样在 %USERPROFILE%\.ds
 <summary><b>方式三：从 Release 的 tgz 装</b></summary>
 
 ```sh
-dsh plugin --profile web add https://github.com/awa-cat/dsh-stm32-helper/releases/download/v<版本>/dsh-external-dsh-stm32-<版本>.tgz
+dsh plugin --profile web add https://github.com/awa-cat/dsh-stm32-helper/releases/download/v0.0.2/dsh-external-dsh-stm32-0.0.2.tgz
 ```
 
-> Release 可能尚未发布、也可能落后于源码（**源码装法永远最新**；不确定就用方式一）。
+tgz 里**同时包含 `skills/`**（6 本技能），装完后它们在 `<profile>/node_modules/@dsh-external/dsh-stm32/skills/`，拷到技能根即可用：
+
+```sh
+cp -r <profile>/node_modules/@dsh-external/dsh-stm32/skills/* ~/.dsh/skills/   # macOS / Linux
+```
+
+> Release 可能落后于源码（**源码装法永远最新**；不确定就用方式一）。
 
 </details>
 
@@ -329,11 +335,15 @@ Keil MDK 只有 Windows 版。POSIX 上用 CubeMX 生成 **Makefile 或 CMake** 
 本插件是**纯 ESM JavaScript**（`lib/*.js`），不需要编译，改完即是源码。
 
 ```sh
-node selftest.mjs           # .ioc 解析 / 语义改写 / 登记表同步 / 回读断言
+npm run check               # 语法检查（lib/ 下全部模块）
+npm run selftest            # 跨平台决策 67 项（自包含，用系统临时目录，任何平台可跑）
 node selftest-guard.mjs     # 越界改动检出 10 项
-node selftest-platform.mjs  # 跨平台决策 67 项（注入 win32 / darwin / linux，无需真机）
-node --check lib/index.js   # 语法检查（lib/ 下每个文件都适用）
+node selftest.mjs           # .ioc 解析 / 语义改写 / 登记表同步 / 回读断言
 ```
+
+> ⚠️ 只有 `selftest-platform.mjs` 是**自包含**的（所以做成了 `npm run selftest`）。
+> `selftest.mjs` 需要一个**真实 `.ioc`** 作输入（文件顶部写死了作者本机的路径，换机器要改），
+> `selftest-guard.mjs` 目前也写死了本机临时目录——两者都还没做成带 fixture 的可移植测试。
 
 `lib/` 的分工：`index.js` 注册工具与总开关，`platform.js` 是**唯一**与操作系统耦合的地方（平台探测、路径、串口后端），
 `ioc.js` / `appfile.js` / `usercode.js` / `guard.js` / `flash.js` / `serial.js` 各管一块。
