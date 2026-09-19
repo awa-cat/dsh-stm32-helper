@@ -6,6 +6,11 @@ whenToUse: CubeMX 生成工程后、修改 STM32 代码后、需要编译/烧录
 
 # STM32 验证纪律
 
+> **🌏 平台**：下面的工具链路径表与命令以 **Windows** 为例（作者本机环境）。
+> Linux / macOS 请对照 [../PLATFORM.md](../PLATFORM.md) 替换：Keil（`UV4.exe`）**在你那边不存在**，
+> 改用 `make` / `gmake` + `arm-none-eabi-gcc`，烧录用 `STM32_Programmer_CLI` / `openocd` / `st-flash`。
+> 验证阶梯与诚实标注的纪律本身与平台无关，照常执行。
+
 ## 🔧 分工边界（用户指定，必须遵守）
 
 **agent 只做到「代码写入工程」为止。编译与烧录由用户手动执行。**

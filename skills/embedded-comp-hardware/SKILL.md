@@ -8,6 +8,9 @@ whenToUse: 会话仍触发本技能名时，或需要 RM / RoboCon / 智能车�
 
 通用嵌入式硬件内容——电源与安全、电机与驱动、传感器与总线、PCB 与布线、系统架构模式、调试与分层排查——请读技能 **`embedded-hardware`**：`C:\Users\szj26\.dsh\skills\embedded-hardware\SKILL.md`。
 
+> **🌏 平台**：上面的绝对路径是作者本机的（POSIX 等价物是 `~/.dsh/skills/embedded-hardware/SKILL.md`）；
+> 各平台工具链路径与串口设备名对照见 [../PLATFORM.md](../PLATFORM.md)。
+
 ## 本目录仅存的独有资料
 
 | 主题 | 文件 |

@@ -258,19 +258,23 @@ Header  Includes  PTD  PD  PM  PV  PFP  0  1  Init  SysInit  2  WHILE  3  4  Err
 | `action` | | `write`（缺省）/ `read` / `list` / `delete` |
 | `file` | write/read/delete 必填 | **`App/` 下的相对路径**，如 `motor.c` 或 `pid/pid.c` |
 | `code` | write 必填 | 文件内容 |
-| `register` | | 是否登记进 Keil 工程，缺省 `true`（仅 `.c` 需要；`.h` 靠 `IncludePath` 就能找到） |
+| `register` | | 是否登记进构建系统，缺省 `true`（仅 `.c` 需要登记文件；头文件靠 `IncludePath` 就能找到） |
 
 **结构性安全**（不靠自觉）：解析后的绝对路径必须落在 `<工程>/App/` 之下（`..` 穿越、绝对路径一律拒绝）；只接受 `.c` / `.h`；写前备份（已有文件才备份）、写后回读校验；删除保留备份。
 
-**比"能写文件"更重要的一半是登记进构建系统**——否则 Keil 根本不会编译它。写 `.c` 时同步改 `.uvprojx`：
+**比"能写文件"更重要的一半是登记进构建系统**——否则编译器根本不会编译它。工具会**按工程里实际存在的构建文件自动选**（可同时存在，全都改）：
 
-1. 把文件加进 `Application/User/App` 文件组（没有该组就创建）；
-2. 把 `../App`（及子目录，如 `../App/pid`）加进 **C 编译器段 `<Cads>`** 的 `<IncludePath>`——工程里有多个 `<IncludePath>`（汇编段、空元素），改错元素会导致头文件找不到；
-3. 两步都幂等，改前备份工程文件，改后回读校验 `../App` 真的在 `<Cads>` 里。
+| 构建文件 | 登记位置 | 重新生成后 |
+|---|---|---|
+| `MDK-ARM/*.uvprojx` | `Application/User/App` 文件组 + **C 编译器段 `<Cads>`** 的 `<IncludePath>`（工程里有多个 `<IncludePath>`，改错元素会导致头文件找不到） | ⚠️ `.uvprojx` 被重写，需重新登记 |
+| `Makefile`（CubeMX Makefile 工程） | `C_SOURCES` 续行块 + `C_INCLUDES`（`-IApp`、`-IApp/<子目录>`）；**续行符处理**与**同名 `.o` 碰撞检测**都在里面 | ⚠️ Makefile 被重写，需重新登记 |
+| `CMakeLists.txt`（CubeMX CMake 工程） | **顶层** `CMakeLists.txt` 的两个用户区（`# Add user sources here` / `# Add user defined include paths`）；`cmake/stm32cubemx/` 是生成物，不碰 | ✅ 该文件 CubeMX 只生成一次、不重写，无需重复登记 |
 
-返回里的 `mdk.patched / changed / includeVerified` 就是这三件事的证据。若工程没有 `MDK-ARM/` 目录，会明确返回"需要在你的构建系统里手动加入该文件"，不会假装成功。
+每步都幂等（重复写返回 `changed:false`）、改前备份、改后回读校验（`sourceVerified` / `includeVerified`）。返回里的 `build.systems` 是每套构建系统的明细，`build.changedSystems` 是这次实际改到的，`staleWarnings` 是"重新生成会丢"的提醒。
 
-> 删除文件**不会**自动从 Keil 分组里摘掉条目（工具会提示你一并移除），否则误删与"工程文件被悄悄改坏"无法区分。
+若工程里三种构建文件都没有，会明确返回"需要手动加入该文件"，**不会假装成功**。
+
+> 删除文件**不会**自动从构建系统里摘掉条目（工具会提示你一并移除），否则误删与"工程文件被悄悄改坏"无法区分。
 
 ---
 
@@ -340,10 +344,10 @@ Header  Includes  PTD  PD  PM  PV  PFP  0  1  Init  SysInit  2  WHILE  3  4  Err
 
 ## 七、三条必须知道的约定
 
-### 1. 工程代码根 = `D:\STM32_Workspace\DSHCode`
+### 1. 工程代码根 = `D:\STM32_Workspace\DSHCode`（POSIX：`~/STM32_Workspace/DSHCode`）
 
 `stm32_generate` 未给 `outputDir` 时默认生成到这里，**不污染既有工程**。
-可用环境变量 `DSH_STM32_CODE_ROOT` 覆盖。
+可用环境变量 `DSH_STM32_CODE_ROOT` 覆盖（两种平台都认）。
 
 该目录位于 DSH 文件沙箱**可写范围之外**，所以：
 
@@ -445,7 +449,7 @@ PC13 配成输出标签 LED，生成 MDK 工程到 DSHCode\demo
 
 技能是"知识手册"，agent 按需读取，不注册任何运行时能力。装到 `~/.dsh/skills`。
 
-**本仓库自带 6 本**：
+**本仓库自带 6 本**（技能正文里的路径与命令以 Windows 为例；**Linux / macOS 的等价路径见 [`skills/PLATFORM.md`](../skills/PLATFORM.md)**）：
 
 | 技能 | 内容 |
 |---|---|
@@ -475,39 +479,41 @@ PC13 配成输出标签 LED，生成 MDK 工程到 DSHCode\demo
 | 烧录命令生成 | ✅ CLI 与参数已实测；**带探针的端到端烧录未验证**（当时没插 ST-LINK） |
 | 串口读取与断言 | ⚠️ 代码就绪，**未在真实串口上验证** |
 | 时钟树 / PWM / DMA / 编码器配置 | ❌ 未实现。这些要 CubeMX 规则引擎判断，硬编会产出错误配置——请在 GUI 里点一次 |
-| 多文件模块（自建 `App/` 目录） | ✅ 实测：建 `App/pid/pid.c` + `.h` → 文件组与 `<Cads>` 段 `IncludePath` 均落进 `.uvprojx`；重复写幂等（`changed:false`）；`../evil.c` 与 `.txt` 被拒；删除保留备份（**删除不会自动摘除 Keil 分组条目**，返回里会提示） |
+| 多文件模块（自建 `App/` 目录） | ✅ 实测：建 `App/pid/pid.c` + `.h` → 文件组与 `<Cads>` 段 `IncludePath` 均落进 `.uvprojx`；Makefile / CMake 登记由 `selftest-platform.mjs` 单测覆盖；重复写幂等（`changed:false`）；`../evil.c` 与 `.txt` 被拒；删除保留备份（**删除不会自动摘除构建系统条目**，返回里会提示） |
+| 跨平台（Linux / macOS） | ⚠️ 代码路径已实现，`selftest-platform.mjs` 67/67 覆盖三平台分支；**未在真机上验证**（见 `skills/PLATFORM.md` 与 README「平台支持」）。`stm32_env` 会返回 `platform.verified:false` |
 | CMake 工具链 | ⚠️ 理论可行；实测在会话沙箱内 CMake configure 会挂（`Detecting C compiler ABI info`），需在沙箱外跑 |
 
 ---
 
 ## 十二、安装
 
+> 完整安装说明（含常见问题、各平台工具链安装）见仓库根目录 [README.md](../README.md)。这里只给最短路径。
+
 ### 插件
 
-```powershell
+```sh
 git clone https://github.com/awa-cat/dsh-stm32-helper.git
 cd dsh-stm32-helper
-bash scripts/build.sh          # 建依赖 junction（无需 tsc，本插件是纯 ESM JS）
+bash scripts/build.sh          # 建依赖链接（无需编译，本插件是纯 ESM JS）；Windows 用 Git Bash
 ```
 
-然后在 DSH 里装配（把路径换成你的克隆位置）：
+然后在 DSH 里装配——**两种方式任选**：
 
-```
-dev_install_package { "dir": "<克隆的绝对路径>" }
-```
-
-它会：加 `link:` 依赖 → 加进 profile 的 `bundles` → 建 junction → 动态加载。
-重启后由 `bundles` 正常装配。
-
-或从 Release 装 tgz：
-
-```powershell
-npm install https://github.com/awa-cat/dsh-stm32-helper/releases/download/v0.0.1/dsh-external-dsh-stm32-0.0.1.tgz
-```
+1. 装了 super-injector：在会话里执行 `dev_install_package { "dir": "<克隆的绝对路径>" }`
+   （它会加 `link:` 依赖 → 加进 profile 的 `bundles` → 建链接 → 动态加载）。
+2. 手工：编辑 profile 的 `package.json`（Windows `%USERPROFILE%\.dsh\profiles\web\`，macOS/Linux `~/.dsh/profiles/web/`），
+   `dependencies` 里加 `"@dsh-external/dsh-stm32": "link:<绝对路径>"`、`dsh.profile.bundles` 里加 `"@dsh-external/dsh-stm32"`，
+   再 `cd <profile 目录> && pnpm install`，最后重启 `dsh web`。
 
 ### 技能
 
+```sh
+# macOS / Linux
+cp -r skills/* ~/.dsh/skills/
+```
+
 ```powershell
+# Windows
 Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 ```
 
@@ -517,7 +523,7 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 dev_uninject_plugin { "match": "dsh-stm32" }
 ```
 
-或用 `dsh plugin --profile web remove @dsh-external/dsh-stm32`。
+或手工删掉 profile `package.json` 里那两处（`link:` 依赖行 + `bundles` 里的名字）后 `pnpm install` 并重启。
 删技能就是删 `~/.dsh/skills/` 下对应的目录（`stm32-*` 三本 + `smartcar-stm32` / `embedded-hardware` / `embedded-comp-hardware`）。
 
 ---

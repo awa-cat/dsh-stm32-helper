@@ -4,9 +4,13 @@ description: 无头驱动 STM32CubeMX 配置外设并生成工程（含 -q 脚�
 whenToUse: 用户要求配置 STM32 外设、修改 .ioc、或从 .ioc 生成/重新生成工程（Keil MDK / Makefile / CMake）时。
 ---
 
+> **🌏 平台**：下面所有路径与命令以 **Windows** 为例（作者本机环境）。
+> Linux / macOS 的等价路径与命令见 [../PLATFORM.md](../PLATFORM.md)（CubeMX 可执行文件位置、固件包仓库、`~/.stm32cubemx`、串口设备名）。
+> 插件本身已跨平台：`stm32_env` 会返回当前平台探测结果与 `platform.verified`（POSIX 上两者为未真机验证）。
+
 > **📁 工程代码根约定（本机，用户指定）**
 >
-> `D:\STM32_Workspace\DSHCode` 是**默认的工程代码根**。`stm32_generate` 不给 `outputDir` 时自动落在这里。
+> `D:\STM32_Workspace\DSHCode` 是**默认的工程代码根**（POSIX 上是 `~/STM32_Workspace/DSHCode`，可用 `DSH_STM32_CODE_ROOT` 覆盖）。`stm32_generate` 不给 `outputDir` 时自动落在这里。
 > 不要默认生成到用户的既有工程目录（`D:\STM32_Workspace\<项目>`），也不要生成到其他地方。
 >
 > ⚠️ **沙箱约束与由此确定的写入方式（实测）**：该目录在 DSH 文件沙箱**可写范围之外**，
