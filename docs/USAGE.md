@@ -10,7 +10,7 @@ STM32CubeMX **无头配置 + 工程生成 + 写代码** 的 DSH 插件。
 - [一、它做什么，不做什么](#一它做什么不做什么)
 - [二、前置条件](#二前置条件)
 - [三、快速开始（点灯，5 分钟）](#三快速开始点灯5-分钟)
-- [四、功能清单（8 个工具）](#四功能清单8-个工具)
+- [四、功能清单（9 个工具）](#四功能清单9-个工具)
 - [五、怎么用：对话方式](#五怎么用对话方式)
 - [六、怎么用：直接调工具](#六怎么用直接调工具)
 - [七、三条必须知道的约定](#七三条必须知道的约定)
@@ -47,11 +47,11 @@ STM32CubeMX **无头配置 + 工程生成 + 写代码** 的 DSH 插件。
 
 ## 总开关（默认关闭）
 
-插件的 8 个工具受一个总开关控制，**默认关闭**。
+插件的 9 个工具受一个总开关控制，**默认关闭**。
 
 - 开启后：会话里出现 `stm32_*` 工具，模型可以使用。
 - 关闭时是**两层**同时生效：
-  1. **从模型的工具表里移除** —— 实测工具总数 54 → 46（正好少这 8 个），模型看不到、自然不会调用；
+  1. **从模型的工具表里移除** —— 8 工具时期实测工具总数 54 → 46（正好少这 8 个），模型看不到、自然不会调用；
   2. **执行时兜底拒绝** —— 万一有绕过工具表的调用，返回 `{ ok:false, disabled:true, hint:... }`。
 
 **怎么切（三种，任选）**：
@@ -123,7 +123,7 @@ STM32_Programmer_CLI.exe -c port=SWD freq=4000 -w "<工程>\MDK-ARM\led-blink\le
 
 ---
 
-## 四、功能清单（8 个工具）
+## 四、功能清单（9 个工具）
 
 ### 1. `stm32_env` — 环境自检
 
@@ -247,6 +247,30 @@ Header  Includes  PTD  PD  PM  PV  PFP  0  1  Init  SysInit  2  WHILE  3  4  Err
 | `durationMs` | | 读取时长，默认 3000 |
 | `expect` | | 正则断言，如 `"Hello|ready"` |
 | `listOnly` | | 只列串口不读 |
+
+### 9. `stm32_app_file` — 自建 `App/` 模块
+
+控制类代码（PID、电机闭环、巡线）塞进 `USER CODE` 区很快就乱，分模块是刚需；而工程代码根在文件沙箱外，agent 的文件工具写不进去。这个工具就是那条受限通道。
+
+| 参数 | 必填 | 说明 |
+|---|---|---|
+| `projectRoot` | ✅ | CubeMX 工程根目录（含 `Core/` 或 `.mxproject`，否则拒绝） |
+| `action` | | `write`（缺省）/ `read` / `list` / `delete` |
+| `file` | write/read/delete 必填 | **`App/` 下的相对路径**，如 `motor.c` 或 `pid/pid.c` |
+| `code` | write 必填 | 文件内容 |
+| `register` | | 是否登记进 Keil 工程，缺省 `true`（仅 `.c` 需要；`.h` 靠 `IncludePath` 就能找到） |
+
+**结构性安全**（不靠自觉）：解析后的绝对路径必须落在 `<工程>/App/` 之下（`..` 穿越、绝对路径一律拒绝）；只接受 `.c` / `.h`；写前备份（已有文件才备份）、写后回读校验；删除保留备份。
+
+**比"能写文件"更重要的一半是登记进构建系统**——否则 Keil 根本不会编译它。写 `.c` 时同步改 `.uvprojx`：
+
+1. 把文件加进 `Application/User/App` 文件组（没有该组就创建）；
+2. 把 `../App`（及子目录，如 `../App/pid`）加进 **C 编译器段 `<Cads>`** 的 `<IncludePath>`——工程里有多个 `<IncludePath>`（汇编段、空元素），改错元素会导致头文件找不到；
+3. 两步都幂等，改前备份工程文件，改后回读校验 `../App` 真的在 `<Cads>` 里。
+
+返回里的 `mdk.patched / changed / includeVerified` 就是这三件事的证据。若工程没有 `MDK-ARM/` 目录，会明确返回"需要在你的构建系统里手动加入该文件"，不会假装成功。
+
+> 删除文件**不会**自动从 Keil 分组里摘掉条目（工具会提示你一并移除），否则误删与"工程文件被悄悄改坏"无法区分。
 
 ---
 
@@ -421,13 +445,16 @@ PC13 配成输出标签 LED，生成 MDK 工程到 DSHCode\demo
 
 技能是"知识手册"，agent 按需读取，不注册任何运行时能力。装到 `~/.dsh/skills`。
 
-**本仓库自带 3 本**：
+**本仓库自带 6 本**：
 
 | 技能 | 内容 |
 |---|---|
 | `stm32-cubemx-headless` | 无头驱动 CubeMX：`-q` 脚本模式、实测命令集、沙箱约束、工具链切换、默认代码根 |
 | `stm32-ioc-editing` | `.ioc` 结构与安全编辑：两张登记表、编号重排、串口/GPIO 配方、备份与回读 |
 | `stm32-verify-loop` | 验证纪律与分工边界：USER CODE 越界检测、HAL API 查证、报告模板 |
+| `smartcar-stm32` | 智能车写码知识库：HAL 外设调用与传输模式决策、CubeMX 配方、任务级实现（点灯→蜂鸣器）、逐飞开源生态、PID/编码器/巡线骨架 |
+| `embedded-hardware` | 通用机电硬件：电源与安全、电机与驱动、传感器与总线、PCB 与布线、系统架构模式、分层排查 |
+| `embedded-comp-hardware` | 兼容入口；仅存 RM / RoboCon / 智能车三类赛事的硬件与电控架构对照，通用部分指向 `embedded-hardware` |
 
 **可选（来自第三方）**：`build-keil` / `flash-keil` / `serial-monitor` / `memory-analysis` /
 `static-analysis` / `workflow` —— 见 [docs/RELATED.md](RELATED.md)。
@@ -448,7 +475,7 @@ PC13 配成输出标签 LED，生成 MDK 工程到 DSHCode\demo
 | 烧录命令生成 | ✅ CLI 与参数已实测；**带探针的端到端烧录未验证**（当时没插 ST-LINK） |
 | 串口读取与断言 | ⚠️ 代码就绪，**未在真实串口上验证** |
 | 时钟树 / PWM / DMA / 编码器配置 | ❌ 未实现。这些要 CubeMX 规则引擎判断，硬编会产出错误配置——请在 GUI 里点一次 |
-| 多文件模块（自建 `App/` 目录） | ❌ 未实现。目前 agent 写的代码只能落在 USER CODE 区内 |
+| 多文件模块（自建 `App/` 目录） | ✅ 实测：建 `App/pid/pid.c` + `.h` → 文件组与 `<Cads>` 段 `IncludePath` 均落进 `.uvprojx`；重复写幂等（`changed:false`）；`../evil.c` 与 `.txt` 被拒；删除保留备份（**删除不会自动摘除 Keil 分组条目**，返回里会提示） |
 | CMake 工具链 | ⚠️ 理论可行；实测在会话沙箱内 CMake configure 会挂（`Detecting C compiler ABI info`），需在沙箱外跑 |
 
 ---
@@ -491,7 +518,7 @@ dev_uninject_plugin { "match": "dsh-stm32" }
 ```
 
 或用 `dsh plugin --profile web remove @dsh-external/dsh-stm32`。
-删技能就是删 `~/.dsh/skills/stm32-*` 三个目录。
+删技能就是删 `~/.dsh/skills/` 下对应的目录（`stm32-*` 三本 + `smartcar-stm32` / `embedded-hardware` / `embedded-comp-hardware`）。
 
 ---
 

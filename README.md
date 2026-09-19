@@ -5,7 +5,7 @@ STM32CubeMX **无头配置与工程生成** 工具包（DSH 插件，toolkit 形
 生态里 `embed-ai-tool` 等技能集覆盖的是**已有工程**的 build / flash / debug / serial；
 本插件补的是它们**完全没有**的那一层：**外设配置 → 无头生成 → 配置真的落进代码**。
 
-> 📖 **使用说明见 [docs/USAGE.md](docs/USAGE.md)** —— 功能清单、8 个工具的参数、典型场景、故障排查。
+> 📖 **使用说明见 [docs/USAGE.md](docs/USAGE.md)** —— 功能清单、9 个工具的参数、典型场景、故障排查。
 
 ## 安装
 
@@ -32,16 +32,16 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 | 路径 | 内容 |
 |---|---|
 | `lib/` | 插件本体（纯 ESM JavaScript，无需编译） |
-| `skills/` | 3 本技能：无头驱动 CubeMX、`.ioc` 安全编辑、验证纪律 |
+| `skills/` | 6 本技能：工具链 3 本（无头驱动 CubeMX、`.ioc` 安全编辑、验证纪律）+ 知识 3 本（智能车 HAL 写码、通用机电硬件、RM/RoboCon/智能车架构对照） |
 | `docs/DESIGN.md` | 完整方案：可行性实测、工具契约、风险对策、分阶段路线 |
 | `docs/RELATED.md` | 与 `embed-ai-tool` 等第三方项目的分工与**按上游安装**的方法 |
 | `selftest*.mjs` | 自测：`.ioc` 解析/改写/登记表同步；guard 的 5 类判定 |
 
 ## 总开关（默认关闭）
 
-8 个工具受一个总开关控制，**默认关闭**。关闭时两层同时生效：
+9 个工具受一个总开关控制，**默认关闭**。关闭时两层同时生效：
 
-1. 从模型的工具表里移除（实测工具总数 54 → 46）；
+1. 从模型的工具表里移除（8 工具时期实测：会话工具总数 54 → 46）；
 2. 执行时兜底拒绝（绕过调用会拿到 `{ ok:false, disabled:true }`）。
 
 三种切换方式（任选）：
@@ -63,6 +63,7 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 |---|---|---|
 | 生成工程 | `stm32_generate` | 插件进程写入 |
 | 写业务代码 | `stm32_user_code` | **只写 `USER CODE BEGIN/END` 之间**，区外不动，写前备份、写后校验 |
+| 写多文件模块 | `stm32_app_file` | 作用域**结构性**限定在 `<工程>/App/`（`..` 穿越拒绝），写入 `.c` 时自动登记进 Keil 分组与 `IncludePath` |
 | 编译 / 烧录 | — | 由用户手动执行 |
 
 因此**不需要**把会话工作区改为 `D:\STM32_Workspace`。
@@ -89,6 +90,7 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 | `stm32_ioc_set` | 语义化改 `.ioc`（uart / gpio），自动同步登记表 + 编号重排，改前备份改后回读 | |
 | `stm32_generate` | CubeMX `-q` 脚本模式无头生成，校验产物 | ⚠️ 沙箱外 |
 | `stm32_user_code` | 把业务代码写进 USER CODE 保留区（结构性只能写区内） | ⚠️ 沙箱外、结构受限 |
+| `stm32_app_file` | 在 `<工程>/App/` 下建/读/列/删自建模块（`.c`/`.h`），并自动登记进 Keil 分组与 `IncludePath` | ⚠️ 沙箱外、结构受限 |
 | `stm32_guard` | 生成物快照 + 越界改动检出（快照/比对/查基线/清快照） | |
 | `stm32_flash` | 烧录 STM32（`auto` 有探针就烧 / `manual` 只给命令） | |
 | `stm32_serial` | 读取串口输出并按正则断言，用于上板验收 | |
@@ -99,7 +101,7 @@ Copy-Item .\skills\* "$env:USERPROFILE\.dsh\skills\" -Recurse -Force
 stm32_ioc_set  改外设参数（自动同步 IPParameters / GPIOParameters + 编号重排 + 备份）
 stm32_generate 无头生成到独立目录（不回写 .ioc，用户 MDK 工程零污染）
 stm32_guard    action=snapshot   ← 生成完立刻建基线
-  ... 写业务代码（只写 USER CODE 区内，或自建 App/ 目录）...
+  ... 写业务代码（只写 USER CODE 区内，或 stm32_app_file 建 App/ 模块）...
 stm32_guard    action=diff       ← 检出"会被下次生成抹掉"的改动
 build-keil     编译（embed-ai-tool 技能）
 stm32_flash    烧录（有探针自动烧，否则给出可复制命令）
