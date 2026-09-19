@@ -55,4 +55,16 @@
 | `stm32-cubemx-headless` | CubeMX 可执行文件路径、固件包仓库、`~/.stm32cubemx` 位置、PowerShell 调用示例 |
 | `smartcar-stm32` | 固件包头文件路径（写 HAL 调用前的查证目录） |
 | `embedded-comp-hardware` | 指向 `embedded-hardware` 的绝对路径 |
-| `embedded-hardware` | 平台中立，无需替换 |
+| `embedded-hardware` | 知识内容平台中立；**工具链/路径/串口**部分按 `references/cross-platform-toolchain.md` 替换 |
+
+## 相关文件（三份平台文档的分工，避免打架）
+
+| 文档 | 定位 |
+|---|---|
+| **本文件** `skills/PLATFORM.md` | **跨技能总表**：工具路径、命令、串口设备名、构建系统登记位置 |
+| `embedded-hardware/references/cross-platform-toolchain.md` | 技能内细化：探测→替代路线、GNU 构建、各平台安装方式、技能正文改写约定 |
+| `stm32-verify-loop/references/cross-platform.md` | 技能内细化：验证阶梯的跨平台性、构建/烧录命令对照、路径探测表 |
+| `embedded-hardware/scripts/detect-embedded-env.sh` / `.ps1` | 可直接跑的环境探测脚本（Mac/Linux 与 Windows 各一份） |
+
+两边说法冲突时**以本文件为准**（它随插件一起维护，且与 `stm32_env` 的实际探测逻辑对齐）；两份技能内文档是通用工具链视角的补充。
+插件侧的探测逻辑在 `lib/platform.js`，那是唯一可执行的权威实现。

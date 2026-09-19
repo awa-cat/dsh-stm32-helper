@@ -18,6 +18,11 @@ whenToUse: 选型、接线方案、上电/通信/电机故障分析，或写驱�
 | PCB、线束、EMC、可测试性 | [references/pcb-and-wiring.md](references/pcb-and-wiring.md) |
 | 差速/全向/云台/顺序机构等模式 | [references/system-patterns.md](references/system-patterns.md) |
 | 工具、排查树、最小测试法 | [references/debug-and-tools.md](references/debug-and-tools.md) |
+| **跨平台工具链**：Mac/Linux 上用什么替代 Keil、盘符与 PowerShell | [references/cross-platform-toolchain.md](references/cross-platform-toolchain.md) |
+
+> 🌏 **平台**：本技能的**知识**（电源/电机/总线/架构/排查）与 OS 无关，任何平台照用；
+> **绑死平台的只是路径与工具**。跨平台对照见上面最后一行那份，跨技能的速查总表见 [../PLATFORM.md](../PLATFORM.md)。
+> 环境探测脚本：`scripts/detect-embedded-env.sh`（macOS/Linux）、`scripts/detect-embedded-env.ps1`（Windows）。
 
 ## 速查
 
